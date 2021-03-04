@@ -96,7 +96,7 @@ def main():
     print(path)
     print("Hi my name is E")
     print("다른사람이 추가한내용")
-    print("my name is OHC")
+    print("my name is Gyeol")
 if __name__ == '__main__':
     main()
     #[(0, 0), (1, 1), (2, 2), (3, 3), (4, 3), (5, 4), (6, 5), (7, 6)]
