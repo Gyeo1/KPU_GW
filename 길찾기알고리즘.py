@@ -94,7 +94,7 @@ def main():
 
     path = aStar(maze, start, end)
     print(path)
-    
+    ##adasdas
 if __name__ == '__main__':
     main()
     #[(0, 0), (1, 1), (2, 2), (3, 3), (4, 3), (5, 4), (6, 5), (7, 6)]
