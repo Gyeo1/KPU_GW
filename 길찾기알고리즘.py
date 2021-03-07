@@ -12,8 +12,8 @@ class Node:
 def heuristic(node, goal, D=1, D2=2 ** 0.5):  # Diagonal Distance로 휴리스틱 값을 구하는 함수!
     dx = abs(node.position[0] - goal.position[0])
     dy = abs(node.position[1] - goal.position[1])
-    return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)
-
+   # return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)
+    return D * (dx + dy)
 def aStar(maze,start,end):
     startNode=Node(None,start)
     endNode=Node(None,end)
@@ -67,7 +67,8 @@ def aStar(maze,start,end):
             if child in closedList:
                 continue
             child.g=currentNode.g+1
-            child.h=((child.position[0]-endNode.position[0])**2)+((child.position[1]-endNode.position[1])**2)
+            #child.h=((child.position[0]-endNode.position[0])**2)+((child.position[1]-endNode.position[1])**2)
+            child.h=heuristic(child,endNode)
             child.f=child.g+child.h
 
             if len([openNode for openNode in openList
