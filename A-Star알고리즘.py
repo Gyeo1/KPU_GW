@@ -35,40 +35,41 @@ def aStar(maze,start,end):
         openList.pop(currentIdx)
         closedList.append(currentNode)
 
-        if currentNode==endNode:
+        if currentNode==endNode: #현재 노드가 목적지노드면
             path=[]
             current=currentNode
             while current is not None:
                 path.append(current.position)
                 current=current.parent
-            return path[::-1]
+            return path[::-1]#[::-1]은 처음~끝 배열까지 역순으로 배열한다는 뜻
         children=[]
+        #새로운 노드를 8방향으로 찾는 for문
         for newPosition in [(0,-1),(0,1),(-1,0),(1,0),(-1,-1),(-1,1),(1,-1),(1,1)]:
-            nodePosition=(
-                currentNode.position[0]+newPosition[0], #X축
-                currentNode.position[1]+newPosition[1] #Y축
+            nodePosition=(#다음 노드 포지션을 잡아준다
+                currentNode.position[0]+newPosition[0],
+                currentNode.position[1]+newPosition[1]
 
             )
-            within_range_criteria=[
+            within_range_criteria=[# 새로 잡은 노드가 maze의 범위에 있는지 확인?
                 nodePosition[0]>(len(maze)-1),
                 nodePosition[0]<0,
                 nodePosition[1]>(len(maze[len(maze)-1])-1),
                 nodePosition[1]<0,
             ]
 
-            if any(within_range_criteria):
+            if any(within_range_criteria):#any문: within~중 하나라도 true면 다음루프로(아래 실행 x) or문 같은거.
                 continue
 
-            if maze[nodePosition[0]][nodePosition[1]]!=0:
+            if maze[nodePosition[0]][nodePosition[1]]!=0:#maze값이 1일때==장애물있으면 다음루프로 넘어감
                 continue
             new_node=Node(currentNode,nodePosition)
             children.append(new_node)
 
         for child in children:
-            if child in closedList:
+            if child in closedList:#이미 평가된 노드면 패스
                 continue
             child.g=currentNode.g+1
-            child.h=((child.position[0]-endNode.position[0])**2)+((child.position[1]-endNode.position[1])**2)
+            child.h=((child.position[0]-endNode.position[0])**2)+((child.position[1]-endNode.position[1])**2)#휴리스틱 식
             child.f=child.g+child.h
 
             if len([openNode for openNode in openList
