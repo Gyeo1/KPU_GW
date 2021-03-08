@@ -109,12 +109,16 @@ def main():
 
     path = aStar(maze1, start, end)
     print(path)
-    print(path[1][1])
-    for i in range(10):
-        for j in range(11):
-            maze1[i][j]=
+    an=[]
+    #print(len(path))
+    for i in range(len(path)):
+        for j in range(2):
+            an.append(path[i][j])
+    print(an)
+    for i in range(0,len(an),2):
+        print(i)
+        #maze1[an[i]][an[i+1]]
 
 
-    #print(len(maze1))
 if __name__ == '__main__':
     main()
