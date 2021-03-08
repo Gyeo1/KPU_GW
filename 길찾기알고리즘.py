@@ -77,25 +77,44 @@ def aStar(maze,start,end):
 
             openList.append(child)
 
+
 def main():
     # 1은 장애물
-    maze=   [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+    maze1=[]
+    f=open("Map.txt")
 
-    start = (2, 1)#(x축,y축)
-    end = (7,6)
+    lines=f.readlines()#readlines는 파일의 모든 줄을 읽어온다.
+    #print(lines)
+    for line in lines:
+        a=line.split(',') #각 줄을 ,를 기주으로 나눈게 a임
+        b=list(map(int,a))
+     #   print(b) #list(map(int,a))는 리스트의 문자열을 int형으로 바꾸는것.
+        maze1.append(b)
 
-    path = aStar(maze, start, end)
+
+    #print(lines)
+    #print(maze1)
+    f = open("result.txt", 'w')
+    row=""
+    for i in range(10):
+        for j in range(11):
+            row+=str(maze1[i][j])
+        f.write(row)
+        f.write("\n")
+        row=""
+
+
+    start = (0, 0)#(x축,y축)
+    end = (0,3)
+
+    path = aStar(maze1, start, end)
     print(path)
-    print("소스트리 체크용")
+    print(path[1][1])
+    for i in range(10):
+        for j in range(11):
+            maze1[i][j]=
+
+
+    #print(len(maze1))
 if __name__ == '__main__':
     main()
-    #[(0, 0), (1, 1), (2, 2), (3, 3), (4, 3), (5, 4), (6, 5), (7, 6)]
