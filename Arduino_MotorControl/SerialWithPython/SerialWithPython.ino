@@ -13,20 +13,20 @@ void loop() {
   {
     a=Serial.read();
     if (a==1){
-    digitalWrite(2, LOW);       // Motor 방향설정 (정방향)
+    digitalWrite(2, LOW);       
     analogWrite(3, 15);
    
     
     }
     else if (a==2){
-    digitalWrite(2, HIGH);       // Motor 방향설정 (정방향)
-    analogWrite(3, 15);         // Motor 속도조절 (0~255)
+    digitalWrite(2, HIGH);       
+    analogWrite(3, 15);        
     //delay(3000);     
     }
     else{
-    digitalWrite(2, HIGH);       // Motor 방향설정 (정방향)
-    analogWrite(3, 0);         // Motor 속도조절 (0~255)
-    //delay(3000);
+    digitalWrite(2, HIGH);       
+    analogWrite(3, 0);        
+    //delay(3000)
     }
   
   }
