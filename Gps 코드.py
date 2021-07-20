@@ -47,4 +47,4 @@ while True:
         # demo point C
         elif avg_lat > 37.3417 and avg_lat < 37.3419 and avg_lon > 126.7327 and avg_lon < 126.7329:
             print("Start point set complete! point: TIP")
-            sys.exit()
+        break

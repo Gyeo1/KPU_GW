@@ -1,3 +1,4 @@
+import serial, time, pynmea2, sys
 from collections import deque
 from threading import Thread
 from time import sleep
@@ -6,13 +7,11 @@ import RPi.GPIO as GPIO
 import serial
 #import keyboard
 import os
-
 from math import floor
 from adafruit_rplidar import RPLidar
 
 
-global end_value,count,work,ignore,deq2,stop_value,detect
-detect=0
+global end_value,count,work,ignore,deq2,stop_value
 stop_value=0
 end_value=0
 count=0
@@ -141,10 +140,10 @@ def aStar(maze, start, end):
             openList.append(child)
 
 #Command Q Create 여기서 목적지 까지 가는 커맨드 명령을 전역 변수 큐에 저장한다.
-def QueueSystem(map,start,length): #맵, 시작점, 경로의 길이가 인자 값.
+def QueueSystem(map,start,length,direction): #맵, 시작점, 경로의 길이가 인자 값.
     global deq2
 
-    direction = 2 # 초기 방향은 direction이다. 처음 위치에 따라서 반드시 수정해줘야 된다!
+   # direction = 2 # 초기 방향은 direction이다. 처음 위치에 따라서 반드시 수정해줘야 된다!
     checkpoint1 = start[0]
     checkpoint2 = start[1]
 
@@ -276,7 +275,7 @@ def Mortor_Action():
     pi.set_servo_pulsewidth(GPIO_Servo, origianl_value)
 
     while work==1:
-        
+
         Action=deq2.popleft() # 큐에있는 명령어들을 꺼내온다.
         if Action=="straight":
             print("straight")
@@ -284,6 +283,7 @@ def Mortor_Action():
                 if stop_value==1:
                     deq2.appendleft("stop")
                     stop_value=0
+
                 value = 1450
                 pi.set_servo_pulsewidth(GPIO_Servo, value)  # 손잡이를 일자로 다시 변경.
                 ser.write([1])
@@ -295,7 +295,7 @@ def Mortor_Action():
                 if (value<1700):
                     value+=50
                     pi.set_servo_pulsewidth(GPIO_Servo,value) #maximum 1700
-                    sleep(0.2) 
+                    sleep(0.2)
             #print(value)
             sleep(1.5)
             count = 0
@@ -309,22 +309,22 @@ def Mortor_Action():
                     print(value)
                     sleep(0.2)
             #print(value)
-            sleep(1)
+            sleep(1.5)
             count = 0
 
         elif Action=="stop":
-            print("stop")
-            ser.write([3])
-            sleep(1)
+            while(stop_value==1):
+                print("stop")
+                ser.write([3])
             count = 0
-        
+
         elif Action=="Finish":
             print("finish")
             end_value = 1
             ser.write([3])
             ser.close()
             break
-        
+
     else:
         ser.write([3])
         ser.close()
@@ -345,6 +345,7 @@ def Read_Sensor():
         if a == 0 and ReadTerm > 10  :  # a=0이면 자석이 센서에 닿았다는 뜻이다.
             count = 1
             ReadTerm = 0
+            print(count)
         sleep(0.02)
         if end_value == 1:
             GPIO.cleanup()
@@ -352,34 +353,10 @@ def Read_Sensor():
     else:
         GPIO.cleanup()
 
-def Forced_Termination():
-    global work
-    while True:
-       # if keyboard.read_key() == "q":
-        #    print("You pressed q, Sysytem Down")
-         #   work=0
-        break
-
-def DistanceSensor():
-    global stop_value
-    check=0
-    GPIO.setmode(GPIO.BCM)
-    sensor = SRF05.SRF05(trigger_pin=15, echo_pin=14)
-    while True:
-        a = sensor.measure()
-        #print(a)
-        if a<=100:
-            check+=1
-            if check==10:
-                stop_value=1
-                check=0
-
-
-
-
 '''
-라이다 센서 부분
-def process_data():
+
+
+def process_Lidar_data():
     max_distance = 0
     scan_data = [0] * 360
     try:
@@ -390,7 +367,7 @@ def process_data():
             LidarCheck(scan_data)
     except KeyboardInterrupt:
         print('Lidar Stopping.')
-            
+
 def LidarCheck(data):
     global stop_value
     if data[90] < 600 and data[90] > 500:
@@ -399,6 +376,66 @@ def LidarCheck(data):
     else:
         stop_value=0
         '''
+def GPS_Point():
+    port = '/dev/ttyS0'  # 맞는 포트 번호 입력.
+    baud = 9600
+    count = 0
+    sum_lat = 0
+    sum_lon = 0
+    avg_lat = 0
+    avg_lon = 0
+    serialPort = serial.Serial(port, baudrate=baud, timeout=0.5)
+
+    while True:
+        str = serialPort.readline().decode().strip()
+
+        if str.find('GGA') > 0:
+            msg = pynmea2.parse(str)
+            print("  Timestamp: %s -- Lat: %s %s -- Lon: %s %s -- Altitude: %s %s -- Satellites: %s" % (
+                msg.timestamp, msg.latitude, msg.lat_dir, msg.longitude, msg.lon_dir, msg.altitude, msg.altitude_units,
+                msg.num_sats))
+            sum_lat += float(msg.latitude)
+            sum_lon += float(msg.longitude)
+            print(" sum_lat: %f -- sum_lon: %f" % (sum_lat, sum_lon))
+            count += 1
+        time.sleep(0.1)
+
+        if count > 9:
+            avg_lat = sum_lat / 10
+            avg_lon = sum_lon / 10
+            print("avg_lat : %s -- avg_lon : %s" % (avg_lat, avg_lon))
+
+            # tip dormitory gps cordination
+            if avg_lat >37.3390000 and avg_lat < 37.33920000 and avg_lon >126.7343994  and avg_lon < 126.7345104:
+                print("Start point set complete! point: A")
+                return 'A'
+
+            # demo point
+            elif avg_lat > 37.3391041 and avg_lat < 37.3392000 and avg_lon > 126.7341037 and avg_lon < 126.7341601:
+                print("Start point set complete! point: B")
+                return 'B'
+
+            # demo point
+            elif avg_lat > 37.3395599 and avg_lat < 37.3396401 and avg_lon >126.7346199  and avg_lon <126.7346911 :
+                print("Start point set complete! point: C")
+                return 'C'
+
+            # demo point
+def DistanceSensor():
+    global stop_value
+    check=[]
+    GPIO.setmode(GPIO.BCM)
+    sensor = SRF05.SRF05(trigger_pin=15, echo_pin=14)
+    while True:
+        a = sensor.measure()
+        #print(a)
+        if a<=100:
+            check.append()
+            if check==10:
+                stop_value=1
+                check=0
+        else:
+            stop_value=0
 
 if __name__ == '__main__':
     # 1은 장애물 64x72
@@ -458,9 +495,20 @@ if __name__ == '__main__':
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
-    #start = (44,23) #시작점과 도착점 반드시 설정을 해줘야된다.
+    point=GPS_Point()
+    if point=='A':
+        start = (44, 50)  # Kick_board location
+        direction=3
+    elif point=='B':
+        start = (44, 50)  # Kick_board location\
+        direction = 3
+    elif point == 'C':
+        start = (44, 50)  # Kick_board location
+        direction = 3
+    elif point == 'D':
+        start = (44, 50)  # Kick_board location
+        direction = 3
     end = (54,80) # parking Area
-    start = (44,50) # Kick_board location
     #end = (3, 57)
     path = aStar(maze, start, end) #A-star Pathfinding
     print(path)
@@ -471,10 +519,10 @@ if __name__ == '__main__':
             maze_path.append(path[i][j])
     for i in range(0,len(maze_path),2):
         maze[maze_path[i]][maze_path[i+1]]=7
-           
-    
+
+
     #경로가 포함된 maze를 txt파일로 저장.
-    f=open("result.txt",'w')
+    f = open("result.txt", 'w')
     row = ""
     for i in range(len(maze)):
         for j in range(len(maze[1])):
@@ -482,28 +530,17 @@ if __name__ == '__main__':
         f.write(row)
         f.write("\n")
         row = ""
-    QueueSystem(maze,start,len(path)) #
+    QueueSystem(maze, start, len(path),direction)  #
 
-
-    #print(deq2)
-    #print(command_Q)
-    th1=Thread(target=Mortor_Action)
-    th2=Thread(target=Read_Sensor)
-    th3=Thread(target=DistanceSensor)
-    #th3=Thread(target=Forced_Termination)
+    # print(deq2)
+    # print(command_Q)
+    th1 = Thread(target=Mortor_Action)
+    th2 = Thread(target=Read_Sensor)
+    th3 = Thread(target=DistanceSensor)
+    # th3=Thread(target=Forced_Termination)
     th1.start()
     th2.start()
     th3.start()
-    #th3.start()
+    # th3.start()
     th1.join()
     th2.join()
-    th3.join()
-
-
-    
-   
-
-
-
-
-
