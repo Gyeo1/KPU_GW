@@ -9,6 +9,7 @@ import serial
 import os
 from math import floor
 from adafruit_rplidar import RPLidar
+import SRF05
 
 
 global end_value,count,work,ignore,deq2,stop_value
@@ -140,10 +141,10 @@ def aStar(maze, start, end):
             openList.append(child)
 
 #Command Q Create 여기서 목적지 까지 가는 커맨드 명령을 전역 변수 큐에 저장한다.
-def QueueSystem(map,start,length,direction): #맵, 시작점, 경로의 길이가 인자 값.
+def QueueSystem(map,start,length): #맵, 시작점, 경로의 길이가 인자 값.
     global deq2
 
-   # direction = 2 # 초기 방향은 direction이다. 처음 위치에 따라서 반드시 수정해줘야 된다!
+    direction = 2 # 초기 방향은 direction이다. 처음 위치에 따라서 반드시 수정해줘야 된다!
     checkpoint1 = start[0]
     checkpoint2 = start[1]
 
@@ -279,11 +280,11 @@ def Mortor_Action():
         Action=deq2.popleft() # 큐에있는 명령어들을 꺼내온다.
         if Action=="straight":
             print("straight")
-            while(count != 1):
-                if stop_value==1:
+            while(count != 1): #count는 바퀴가 한바퀴 돌아야 1이다.
+                if stop_value==1: #직진하다 물체 발견시.
+                    deq2.appendleft("straight")
                     deq2.appendleft("stop")
-                    stop_value=0
-
+                    break#처리중인 명령어를 stop이후에 나에고 다시 넣어주고 while문을 빠져 나간다
                 value = 1450
                 pi.set_servo_pulsewidth(GPIO_Servo, value)  # 손잡이를 일자로 다시 변경.
                 ser.write([1])
@@ -313,7 +314,7 @@ def Mortor_Action():
             count = 0
 
         elif Action=="stop":
-            while(stop_value==1):
+            while(stop_value==1):#센서가 물체를 탐지할 경우
                 print("stop")
                 ser.write([3])
             count = 0
@@ -423,18 +424,19 @@ def GPS_Point():
             # demo point
 def DistanceSensor():
     global stop_value
-    check=[]
-    GPIO.setmode(GPIO.BCM)
-    sensor = SRF05.SRF05(trigger_pin=15, echo_pin=14)
+    check=0
+    GPIO.setmode(GPIO.BOARD)
+    sensor = SRF05.SRF05(trigger_pin=10, echo_pin=8)
     while True:
-        a = sensor.measure()
-        #print(a)
-        if a<=100:
-            check.append()
-            if check==10:
+        a = sensor.measure()#센서값 측정.
+        sleep(0.05)
+        if a<=100 and type(a)!=None: #1m이하로 들어오면
+            check+=1
+            if check==10: #1m 이하의 값을 10번 받으면? 멈추게 하기
                 stop_value=1
-                check=0
+
         else:
+            check=0
             stop_value=0
 
 if __name__ == '__main__':
@@ -495,6 +497,7 @@ if __name__ == '__main__':
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+    '''
     point=GPS_Point()
     if point=='A':
         start = (44, 50)  # Kick_board location
@@ -508,6 +511,8 @@ if __name__ == '__main__':
     elif point == 'D':
         start = (44, 50)  # Kick_board location
         direction = 3
+    '''
+    start = (44, 50)
     end = (54,80) # parking Area
     #end = (3, 57)
     path = aStar(maze, start, end) #A-star Pathfinding
@@ -530,7 +535,7 @@ if __name__ == '__main__':
         f.write(row)
         f.write("\n")
         row = ""
-    QueueSystem(maze, start, len(path),direction)  #
+    QueueSystem(maze, start, len(path))  #
 
     # print(deq2)
     # print(command_Q)

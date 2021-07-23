@@ -264,7 +264,7 @@ def QueueSystem(map,start,length): #맵, 시작점, 경로의 길이가 인자 �
     #return deq2
 
 def Mortor_Action():
-    global count,end_value,work,ignore,stop_value
+    global count,end_value,work,ignore,stop_value,deq2
     ser = serial.Serial('/dev/ttyACM0', 9600)
     ser.close()
     ser.open()
@@ -276,7 +276,6 @@ def Mortor_Action():
     pi.set_servo_pulsewidth(GPIO_Servo, origianl_value)
 
     while work==1:
-        
         Action=deq2.popleft() # 큐에있는 명령어들을 꺼내온다.
         if Action=="straight":
             print("straight")
